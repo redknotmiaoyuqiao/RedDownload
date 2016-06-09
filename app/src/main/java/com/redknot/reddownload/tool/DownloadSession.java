@@ -21,9 +21,33 @@ import java.net.URL;
 public class DownloadSession {
     private String url;
     private String savePath;
-    private int length = 0;
-    private int total = 0;
     private DownloadListener downloadListener = null;
+
+    private int length = 0;
+
+    private int totle = 0;
+
+    private int process_cache = 0;
+
+    private synchronized void update(int add){
+        this.totle = this.totle + add;
+
+        int process = (int)((totle)/(length + 0.0f) * 100);
+
+        if(process != this.process_cache){
+            Message msg = new Message();
+            this.process_cache = process;
+            msg.what = VALUE.UPDATE;
+            msg.obj = process;
+            downloadListener.sendMessage(msg);
+        }
+
+        if(this.totle == this.length){
+            Message msg = new Message();
+            msg.what = VALUE.COMPLETE;
+            downloadListener.sendMessage(msg);
+        }
+    }
 
     public DownloadSession(String url, DownloadListener downloadListener) {
         this.url = url;
@@ -33,26 +57,6 @@ public class DownloadSession {
     public void start() {
         GetLengthThread t = new GetLengthThread(this.url);
         new Thread(t).start();
-    }
-
-    synchronized void update(int add) {
-        this.total += add;
-
-        Message message = new Message();
-
-        if(this.total == this.length){
-            message.what = VALUE.COMPLETE;
-            downloadListener.sendMessage(message);
-            return;
-        }
-
-        Log.e("p",this.total + "  " + this.length);
-
-        message.what = VALUE.UPDATE;
-        double p = (this.total + 0.0f) / this.length;
-
-        message.obj = (int) (100 * p);
-        downloadListener.sendMessage(message);
     }
 
     private class DownLoadThread implements Runnable {
@@ -87,7 +91,6 @@ public class DownloadSession {
                 int len = 0;
                 while ((len = is.read(buff)) != -1) {
                     randomAccessFile.write(buff, 0, len);
-
                     update(len);
                 }
 
@@ -115,10 +118,9 @@ public class DownloadSession {
                 conn.setConnectTimeout(5000);
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:43.0) Gecko/20100101 Firefox/43.0");
 
-                int length = conn.getContentLength();//获取文件长度
+                length = conn.getContentLength();//获取文件长度
 
                 Log.e("Location", length + "");
-                DownloadSession.this.length = length;
 
                 if (length < 0) {
                     return;
@@ -128,25 +130,20 @@ public class DownloadSession {
 
                 RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
                 randomAccessFile.setLength(length);
-
                 randomAccessFile.close();
 
-                Message message = new Message();
-                message.what = VALUE.READY;
-                downloadListener.sendMessage(message);
+                Log.e("Location", file.getAbsolutePath());
 
-                int blockSize = length / 5;
-                for (int i = 0; i < 5; i++) {
+                int blockSize = length / 10;
+                for (int i = 0; i < 10; i++) {
                     int begin = i * blockSize;
-                    int end = (i + 1) * blockSize;
-                    if (i == 2) {
-                        end = length;
+                    int end = (i + 1) * blockSize - 1;
+                    if (i == 9) {
+                        end = length - 1;
                     }
                     DownLoadThread downLoadThread = new DownLoadThread(i, begin, end, file, url);
                     new Thread(downLoadThread).start();
                 }
-
-                Log.e("Location", file.getAbsolutePath());
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
