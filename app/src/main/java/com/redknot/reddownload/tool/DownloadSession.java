@@ -1,8 +1,6 @@
 package com.redknot.reddownload.tool;
 
-import android.os.Environment;
 import android.os.Message;
-import android.util.Log;
 
 import com.redknot.reddownload.listener.DownloadListener;
 import com.redknot.reddownload.listener.VALUE;
@@ -19,8 +17,7 @@ import java.net.URL;
  * Created by miaoyuqiao on 16/6/6.
  */
 public class DownloadSession {
-    private String url;
-    private String savePath;
+
     private DownloadListener downloadListener = null;
 
     private int length = 0;
@@ -49,13 +46,12 @@ public class DownloadSession {
         }
     }
 
-    public DownloadSession(String url, DownloadListener downloadListener) {
-        this.url = url;
+    public DownloadSession(DownloadListener downloadListener) {
         this.downloadListener = downloadListener;
     }
 
-    public void start() {
-        GetLengthThread t = new GetLengthThread(this.url);
+    public void start(String url,String savePath,int threadNum) {
+        GetLengthThread t = new GetLengthThread(url,savePath,threadNum);
         new Thread(t).start();
     }
 
@@ -104,9 +100,13 @@ public class DownloadSession {
 
     private class GetLengthThread implements Runnable {
         private String url;
+        private String savePath;
+        private int threadNum;
 
-        public GetLengthThread(String url) {
+        public GetLengthThread(String url,String savePath ,int threadNum) {
             this.url = url;
+            this.savePath = savePath;
+            this.threadNum = threadNum;
         }
 
         @Override
@@ -120,25 +120,26 @@ public class DownloadSession {
 
                 length = conn.getContentLength();//获取文件长度
 
-                Log.e("Location", length + "");
-
                 if (length < 0) {
                     return;
                 }
 
-                File file = new File(Environment.getExternalStorageDirectory(), "aaamiao");
+                File file = new File(this.savePath);
+
+                Message msg = new Message();
+                msg.what = VALUE.READY;
+                msg.obj = file;
+                downloadListener.sendMessage(msg);
 
                 RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
                 randomAccessFile.setLength(length);
                 randomAccessFile.close();
 
-                Log.e("Location", file.getAbsolutePath());
-
-                int blockSize = length / 10;
-                for (int i = 0; i < 10; i++) {
+                int blockSize = length / this.threadNum;
+                for (int i = 0; i < this.threadNum; i++) {
                     int begin = i * blockSize;
                     int end = (i + 1) * blockSize - 1;
-                    if (i == 9) {
+                    if (i == this.threadNum - 1) {
                         end = length - 1;
                     }
                     DownLoadThread downLoadThread = new DownLoadThread(i, begin, end, file, url);

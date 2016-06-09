@@ -1,6 +1,7 @@
 package com.redknot.reddownload;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -10,6 +11,8 @@ import android.widget.SeekBar;
 
 import com.redknot.reddownload.listener.DownloadListener;
 import com.redknot.reddownload.tool.DownloadSession;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,28 +45,32 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
             if (v == btn_start) {
                 String url = et_url_input.getText().toString();
-                DownloadSession session = new DownloadSession(url,new MyDownloadListener());
-                session.start();
+                String savePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/aaaaaa";
+
+                MyDownloadListener myDownloadListener = new MyDownloadListener();
+
+                DownloadSession session = new DownloadSession(myDownloadListener);
+                session.start(url,savePath,5);
             }
         }
     }
 
-    private class MyDownloadListener extends DownloadListener{
+    private class MyDownloadListener extends DownloadListener {
 
         @Override
-        public void onReady() {
-            Log.e("DownLoad","ready");
+        public void onReady(File file) {
+            Log.e("DownLoad", file.length() + " " + file.getAbsolutePath());
         }
 
         @Override
         public void onUpdate(int process) {
-            Log.e("DownLoad","update:" + process);
+            Log.e("DownLoad", "update:" + process);
             seekBar.setProgress(process);
         }
 
         @Override
         public void onComplete() {
-            Log.e("DownLoad","complete");
+            Log.e("DownLoad", "complete");
         }
     }
 
