@@ -26,6 +26,8 @@ public class DownloadSession {
 
     private int process_cache = 0;
 
+    private boolean isDownload = true;
+
     private synchronized void update(int add){
         this.totle = this.totle + add;
 
@@ -53,6 +55,14 @@ public class DownloadSession {
     public void start(String url,String savePath,int threadNum) {
         GetLengthThread t = new GetLengthThread(url,savePath,threadNum);
         new Thread(t).start();
+    }
+
+    public void pause(){
+
+    }
+
+    public void stop(){
+
     }
 
     private class DownLoadThread implements Runnable {
@@ -85,7 +95,7 @@ public class DownloadSession {
                 randomAccessFile.seek(this.begin);
 
                 int len = 0;
-                while ((len = is.read(buff)) != -1) {
+                while (((len = is.read(buff)) != -1) && isDownload) {
                     randomAccessFile.write(buff, 0, len);
                     update(len);
                 }
