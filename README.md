@@ -7,8 +7,10 @@ DownloadListener 是一个抽象类，是下载的监听，在使用的时候，
 
 - 需要用到的权限
 <pre>
+
 <uses-permission android:name="android.permission.INTERNET"></uses-permission>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+
 </pre>
 
 - 监听类
@@ -34,7 +36,6 @@ private class MyDownloadListener extends DownloadListener {
 
 
 - DownloadSession 表示一次下载会话（下载一个文件）
-
 <pre>
 //构造方法中传入的是一个监听对象
 DownloadSession session = new DownloadSession(myDownloadListener);
